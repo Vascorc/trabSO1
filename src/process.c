@@ -54,7 +54,7 @@ Process generate_random_process(int id, int current_time) {
 
 void load_processes_from_file(ProcessQueue *queue) {
     // Caminho fixo para o arquivo de entrada
-    const char* filename = "data/example_input.txt";
+    const char* filename = "example_input.txt";
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Erro ao abrir ficheiro");
