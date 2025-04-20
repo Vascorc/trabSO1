@@ -117,6 +117,19 @@ void run_priority(ProcessQueue* queue, int preemptive) {
     printf("\n[PRIORITY %s] Escalonamento:\n", preemptive ? "Preemptivo" : "Não-Preemptivo");
 
     while (completed < queue->size) {
+        // ======== AGING =========
+        for (int i = 0; i < queue->size; i++) {
+            Process* p = &queue->list[i];
+            if (!done[i] && p->arrival_time <= current_time && remaining[i] > 0) {
+                int waiting_time = current_time - p->arrival_time;
+                if (waiting_time > 10) { // ajustável
+                    p->priority--; // aumenta prioridade
+                    if (p->priority < 0) p->priority = 0;
+                }
+            }
+        }
+        // ========================
+
         int idx = -1;
         int best_prio = __INT_MAX__;
         for (int i = 0; i < queue->size; i++) {
@@ -173,6 +186,10 @@ void run_priority(ProcessQueue* queue, int preemptive) {
     free(remaining);
     free(done);
 }
+
+
+
+
 
 // Mantêm os outros como estavam (podem ser melhorados depois)
 void run_round_robin(ProcessQueue* queue, int quantum) {
@@ -292,9 +309,78 @@ void run_edf(ProcessQueue* queue) {
 }
 
 void run_rm(ProcessQueue* queue) {
-    qsort(queue->list, queue->size, sizeof(Process), compare_by_priority); // prioridade == 1/periodo
-    run_fcfs(queue); // pode ser melhorado
+    int tempo_total = 100;  // duração da simulação
+    int* remaining_time = calloc(queue->size, sizeof(int));
+    int* next_release = calloc(queue->size, sizeof(int));
+    int* deadline_misses = calloc(queue->size, sizeof(int));
+    int* current_deadline = malloc(sizeof(int) * queue->size);
+    int total_cpu_time = 0;
+    int current_time = 0;
+
+    printf("\n[RM] Escalonamento Rate Monotonic:\n");
+
+    // Inicializa tempos
+    for (int i = 0; i < queue->size; i++) {
+        remaining_time[i] = 0;
+        next_release[i] = queue->list[i].arrival_time;
+        current_deadline[i] = next_release[i] + queue->list[i].period;
+    }
+
+    while (current_time < tempo_total) {
+        int selected = -1;
+        int best_period = __INT_MAX__;
+
+        // Libera novos jobs no tempo de chegada
+        for (int i = 0; i < queue->size; i++) {
+            if (current_time == next_release[i]) {
+                if (remaining_time[i] > 0) {
+                    deadline_misses[i]++;
+                    printf("MISS: Processo %d perdeu o deadline anterior!\n", queue->list[i].id);
+                }
+                remaining_time[i] = queue->list[i].burst_time;
+                next_release[i] += queue->list[i].period;
+                current_deadline[i] = next_release[i];
+            }
+        }
+
+        // Seleciona o processo com menor período (maior prioridade)
+        for (int i = 0; i < queue->size; i++) {
+            if (remaining_time[i] > 0 && queue->list[i].period < best_period) {
+                best_period = queue->list[i].period;
+                selected = i;
+            }
+        }
+
+        if (selected != -1) {
+            remaining_time[selected]--;
+            total_cpu_time++;
+            printf("Tempo %d: Processo %d executando\n", current_time, queue->list[selected].id);
+        } else {
+            printf("Tempo %d: CPU Ociosa\n", current_time);
+        }
+
+        current_time++;
+    }
+
+    // Estatísticas finais
+    int total_misses = 0;
+    for (int i = 0; i < queue->size; i++)
+        total_misses += deadline_misses[i];
+
+    float utilization = (float)total_cpu_time / tempo_total * 100.0;
+    float throughput = (float)(queue->size * (tempo_total / queue->list[0].period)) / tempo_total;
+
+    printf("\n--- Estatísticas RM ---\n");
+    printf("Total de deadline misses: %d\n", total_misses);
+    printf("Utilização da CPU: %.2f%%\n", utilization);
+    printf("Throughput aproximado: %.2f processos/unidade de tempo\n", throughput);
+
+    free(remaining_time);
+    free(next_release);
+    free(deadline_misses);
+    free(current_deadline);
 }
+
 
 void run_scheduler(ProcessQueue* queue, SchedulingAlgorithm algo, int quantum) {
     switch (algo) {

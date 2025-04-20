@@ -6,18 +6,24 @@
 #include "scheduler.h"
 
 SchedulingAlgorithm parse_algo(const char* str) {
-    if (strcmp(str, "FCFS") == 0) return FCFS;  //criado
-    if (strcmp(str, "SJF") == 0) return SJF;    //criado
-    if (strcmp(str, "PRIORITY") == 0) return PRIORITY_NON_PREEMPTIVE;//criado
+    if (strcmp(str, "FCFS") == 0) return FCFS;
+    if (strcmp(str, "SJF") == 0) return SJF;
+    if (strcmp(str, "PRIORITY") == 0) return PRIORITY_NON_PREEMPTIVE;
     if (strcmp(str, "PPRIO") == 0) return PRIORITY_PREEMPTIVE;
-    if (strcmp(str, "RR") == 0) return ROUND_ROBIN; //criado
+    if (strcmp(str, "RR") == 0) return ROUND_ROBIN;
     if (strcmp(str, "RM") == 0) return RATE_MONOTONIC;
-    if (strcmp(str, "EDF") == 0) return EDF;    //criado
+    if (strcmp(str, "EDF") == 0) return EDF;
     return FCFS;
 }
 
 int main(int argc, char* argv[]) {
-    srand(time(NULL));
+    // 🌱 Semente aleatória ou fornecida
+    int seed = (int)time(NULL);  // valor padrão se nenhuma seed for passada
+    if (argc >= 6) {
+        seed = atoi(argv[5]);
+    }
+    srand(seed);
+    printf("Seed usada: %d\n", seed);
 
     if (argc < 3) {
         printf("Uso: %s <ALGO> <STATIC|DYNAMIC> [argumentos adicionais]\n", argv[0]);
@@ -55,7 +61,6 @@ int main(int argc, char* argv[]) {
 
         load_processes_from_file(queue);
         printf("Tempo máximo de simulação: %d\n", max_simulation_time);
-        // Podes usar a variável max_simulation_time conforme necessário no run_scheduler
     }
 
     int quantum = (argc >= 5) ? atoi(argv[4]) : 2;
