@@ -17,7 +17,6 @@ SchedulingAlgorithm parse_algo(const char* str) {
 }
 
 int main(int argc, char* argv[]) {
-    // 🌱 Semente aleatória ou fornecida
     int seed = (int)time(NULL);  // valor padrão se nenhuma seed for passada
     if (argc >= 6) {
         seed = atoi(argv[5]);
@@ -63,8 +62,16 @@ int main(int argc, char* argv[]) {
         printf("Tempo máximo de simulação: %d\n", max_simulation_time);
     }
 
+    // O quantum pode ser usado tanto no modo estático quanto no dinâmico (mas é essencial para o Round Robin)
     int quantum = (argc >= 5) ? atoi(argv[4]) : 2;
-    run_scheduler(queue, algo, quantum);
+
+    if (is_dynamic) {
+        run_scheduler(queue, algo, quantum);
+    } else {
+        int tempo_total = atoi(argv[3]);  // Tempo máximo de simulação já passado como argumento no STATIC
+        run_scheduler_static(queue, algo, quantum, tempo_total);
+    }
+
     destroy_process_queue(queue);
     return 0;
 }
