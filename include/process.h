@@ -26,6 +26,5 @@ ProcessQueue* create_process_queue(int capacity);
 void destroy_process_queue(ProcessQueue* queue);
 void add_process(ProcessQueue* queue, Process proc);
 Process generate_random_process(int id, int current_time);
-void load_processes_from_file(ProcessQueue* queue);
-
+void load_processes_from_file(char* filename, ProcessQueue *queue, int is_periodic);
 #endif
