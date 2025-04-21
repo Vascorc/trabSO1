@@ -52,9 +52,7 @@ Process generate_random_process(int id, int current_time) {
     return p;
 }
 
-void load_processes_from_file(ProcessQueue *queue) {
-    // Caminho fixo para o arquivo de entrada
-    const char* filename = "data/example_input.txt";
+void load_processes_from_file(char* filename, ProcessQueue *queue, int is_periodic) {
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Erro ao abrir ficheiro");
@@ -62,13 +60,24 @@ void load_processes_from_file(ProcessQueue *queue) {
     }
 
     Process p;
-    // Lê o arquivo e adiciona processos à fila
-    while (fscanf(file, "%d %d %d %d", &p.id, &p.arrival_time, &p.burst_time, &p.priority) == 4) {
-        p.remaining_time = p.burst_time;
-        add_process(queue, p);
+
+    if (is_periodic) {
+        // Lê processos periódicos: id, arrival_time, burst_time, period
+        while (fscanf(file, "%d %d %d %d", &p.id, &p.arrival_time, &p.burst_time, &p.period) == 4) {
+            p.priority = -1;
+            p.deadline = p.arrival_time + p.period;
+            p.remaining_time = p.burst_time;
+            add_process(queue, p);
+        }
+    } else {
+        // Lê processos gerais: id, arrival_time, burst_time, priority
+        while (fscanf(file, "%d %d %d %d", &p.id, &p.arrival_time, &p.burst_time, &p.priority) == 4) {
+            p.period = -1;
+            p.deadline = -1;
+            p.remaining_time = p.burst_time;
+            add_process(queue, p);
+        }
     }
 
     fclose(file);
 }
-
-
